@@ -4,16 +4,21 @@ import { useState } from "react";
 import Link from "next/link";
 
 export default function Home() {
+  // Primary form state
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Secondary form state (bottom CTA)
+  const [email2, setEmail2] = useState("");
+  const [status2, setStatus2] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMessage2, setErrorMessage2] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email) return;
     setStatus("loading");
     setErrorMessage("");
-
     try {
       const res = await fetch("/api/subscribe", {
         method: "POST",
@@ -33,6 +38,54 @@ export default function Home() {
       setErrorMessage("Something went wrong. Try again.");
     }
   }
+
+  async function handleSubmit2(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email2) return;
+    setStatus2("loading");
+    setErrorMessage2("");
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email2 }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus2("success");
+        window.location.href = "/thank-you";
+      } else {
+        setStatus2("error");
+        setErrorMessage2(data.error || "Something went wrong. Try again.");
+      }
+    } catch {
+      setStatus2("error");
+      setErrorMessage2("Something went wrong. Try again.");
+    }
+  }
+
+  const workflows = [
+    {
+      title: 'The "Never Miss a Lead" Machine',
+      body: "A prospect fills out your contact form during your 9am standup. They get a personal-looking response within 5 minutes. You find out when you check Slack at lunch. Setup: ~30 minutes.",
+    },
+    {
+      title: "The Zero-Touch Client Onboarding Sequence",
+      body: "New payment comes in. Make.com creates the Google Drive folder, sends the welcome email, adds them to your CRM, and fires the onboarding questionnaire. Automatically. You're still at work when it happens.",
+    },
+    {
+      title: "The Invoice + Payment Tracker",
+      body: "Automated follow-up on unpaid invoices, so you're not choosing between getting paid and being awkward about it.",
+    },
+    {
+      title: "The One-Post-to-Everywhere Content Distributor",
+      body: "Write one LinkedIn post. Make.com handles the rest: Twitter, your content archive, draft newsletter. One piece of content, multiple places.",
+    },
+    {
+      title: "The Monday Morning Business Digest",
+      body: "Every Monday at 7am, your inbox has a clean summary: revenue, new subscribers, open leads, tasks due this week. No app switching, no manual checking.",
+    },
+  ];
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-6 py-16">
@@ -57,12 +110,17 @@ export default function Home() {
         </p>
 
         {/* PDF title */}
-        <p className="text-base text-neutral-400 mb-8">
+        <p className="text-base text-neutral-400 mb-5">
           Download the free PDF:{" "}
           <em className="text-neutral-200">The Side Business Automation Stack — 5 Make.com Workflows That Run Your Business While You&apos;re at Work</em>
         </p>
 
-        {/* Form — above the fold, contained */}
+        {/* Social proof */}
+        <p className="text-sm text-neutral-500 mb-6">
+          📥 Downloaded by <span className="text-neutral-300 font-medium">37 side business owners</span> this week.
+        </p>
+
+        {/* Primary form — above the fold, contained */}
         <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-6 mb-4">
           <label htmlFor="email" className="block text-sm font-semibold text-neutral-200 mb-3">
             Where should I send it?
@@ -93,16 +151,37 @@ export default function Home() {
           )}
         </div>
 
-        {/* FTC Disclosure */}
-        <p className="text-xs text-neutral-600 leading-relaxed mb-12">
+        {/* FTC Disclosure — tightened gap */}
+        <p className="text-xs text-neutral-600 leading-relaxed mb-8">
           I personally use and recommend Make.com for my own automation stack. This site contains affiliate links — if you sign up for Make.com through my link, I may earn a commission at no additional cost to you. The PDF is free either way.
         </p>
 
-        {/* Divider */}
-        <div className="border-t border-neutral-800 mb-12" />
+        {/* What's Inside — moved above body copy */}
+        <div className="border border-neutral-800 rounded-xl mb-8">
+          <div className="px-6 pt-5 pb-4">
+            <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-widest">What&apos;s inside</h2>
+          </div>
+          {workflows.map((item, i) => (
+            <div
+              key={i}
+              className={`px-6 py-5 flex gap-4 ${i < workflows.length - 1 ? "border-b border-neutral-800" : ""}`}
+            >
+              <span className="text-neutral-600 font-mono text-xs font-bold pt-0.5 shrink-0 w-5 text-right">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <p className="font-semibold text-white text-sm leading-snug">{item.title}</p>
+                <p className="text-neutral-400 text-sm leading-relaxed mt-1.5">{item.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-        {/* Body */}
-        <div className="text-neutral-300 space-y-5 mb-12 text-base leading-relaxed">
+        {/* Divider — tighter transition to story */}
+        <div className="border-t border-neutral-800 mb-8" />
+
+        {/* Body copy */}
+        <div className="text-neutral-300 space-y-5 mb-10 text-base leading-relaxed">
           <p>
             If you&apos;re building something on the side while working full-time, you already know the math.
           </p>
@@ -117,46 +196,34 @@ export default function Home() {
           </p>
         </div>
 
-        {/* What's inside */}
-        <div className="border border-neutral-800 rounded-xl mb-12">
-          <div className="px-6 pt-5 pb-4">
-            <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-widest">What&apos;s inside</h2>
-          </div>
-          {[
-            {
-              title: 'The "Never Miss a Lead" Machine',
-              body: "A prospect fills out your contact form during your 9am standup. They get a personal-looking response within 5 minutes. You find out when you check Slack at lunch. Setup: ~30 minutes.",
-            },
-            {
-              title: "The Zero-Touch Client Onboarding Sequence",
-              body: "New payment comes in. Make.com creates the Google Drive folder, sends the welcome email, adds them to your CRM, and fires the onboarding questionnaire. Automatically. You're still at work when it happens.",
-            },
-            {
-              title: "The Invoice + Payment Tracker",
-              body: "Automated follow-up on unpaid invoices, so you're not choosing between getting paid and being awkward about it.",
-            },
-            {
-              title: "The One-Post-to-Everywhere Content Distributor",
-              body: "Write one LinkedIn post. Make.com handles the rest: Twitter, your content archive, draft newsletter. One piece of content, multiple places.",
-            },
-            {
-              title: "The Monday Morning Business Digest",
-              body: "Every Monday at 7am, your inbox has a clean summary: revenue, new subscribers, open leads, tasks due this week. No app switching, no manual checking.",
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className={`px-6 py-5 flex gap-4 ${i < 4 ? "border-b border-neutral-800" : ""}`}
+        {/* Second opt-in — bottom CTA */}
+        <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-6 mb-8">
+          <p className="text-base font-bold text-white mb-1">Ready to stop running on willpower?</p>
+          <p className="text-sm text-neutral-400 mb-4">Get the 5 workflows free — no cost, no catch.</p>
+          <form onSubmit={handleSubmit2} className="flex flex-col sm:flex-row gap-3">
+            <input
+              id="email2"
+              type="email"
+              required
+              value={email2}
+              onChange={(e) => setEmail2(e.target.value)}
+              placeholder="your@email.com"
+              className="flex-1 bg-neutral-800 border border-neutral-700 rounded-md px-4 py-3 text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-400 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={status2 === "loading"}
+              className="bg-white text-black font-bold px-6 py-3 rounded-md text-sm hover:bg-neutral-100 transition-colors disabled:opacity-60 whitespace-nowrap"
             >
-              <span className="text-neutral-600 font-mono text-xs font-bold pt-0.5 shrink-0 w-5 text-right">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div>
-                <p className="font-semibold text-white text-sm leading-snug">{item.title}</p>
-                <p className="text-neutral-400 text-sm leading-relaxed mt-1.5">{item.body}</p>
-              </div>
-            </div>
-          ))}
+              {status2 === "loading" ? "Sending…" : "Send me the 5 workflows →"}
+            </button>
+          </form>
+          <p className="text-xs text-neutral-600 mt-3">
+            You&apos;ll also receive automation tips and updates from Andrew. Unsubscribe any time.
+          </p>
+          {status2 === "error" && (
+            <p className="text-red-400 text-sm mt-3">{errorMessage2}</p>
+          )}
         </div>
 
         {/* Footer */}

@@ -131,9 +131,8 @@ export default function PrivacyPolicy() {
             <p className="text-neutral-400">
               Questions about this privacy policy or requests to exercise your data rights:
             </p>
-            {/* PLACEHOLDER — Andrew needs to confirm contact email */}
             <p className="mt-2 text-neutral-400">
-              Email: <span className="text-yellow-600">[CONTACT_EMAIL — pending Andrew confirmation]</span>
+              Email: <a href="mailto:info@modernsecondincome.com" className="text-neutral-200 hover:text-white transition-colors">info@modernsecondincome.com</a>
               <br />
               Website: modernsecondincome.com
             </p>

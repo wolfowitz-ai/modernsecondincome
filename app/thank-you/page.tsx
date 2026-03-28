@@ -25,16 +25,16 @@ export default function ThankYou() {
           <p className="text-neutral-400 text-sm font-medium uppercase tracking-widest">While you wait — a quick story about why I built this.</p>
 
           <p>
-            My name is Andrew. I&apos;m an IT Director. Or I was, until April 1.
+            My name is Andrew. I was an IT Director until April 1.
           </p>
           <p>
-            That&apos;s not a typo. I set a date. My wife knows. My boss doesn&apos;t yet.
+            I set a date. My wife knew for months. I told my boss the week before — that conversation was harder than I expected. He was gracious about it. We shook hands.
           </p>
           <p>
             For 15 years I&apos;ve managed IT systems, infrastructure, and teams for a company that&apos;s been good to me. Stable income. Good benefits. A ceiling I can see from my desk.
           </p>
           <p>
-            Three years ago I started building a consulting practice on the side. AI workflow automation for small businesses — helping them set up the kind of systems I&apos;ve been running at the corporate level for over a decade. I was good at it. I had real clients. I had a real problem.
+            A little over a year ago I started building a consulting practice on the side. AI workflow automation for small businesses — helping them set up the kind of systems I&apos;ve been running at the corporate level for over a decade. I was good at it. I had real clients. I had a real problem.
           </p>
           <p>
             I had no time.

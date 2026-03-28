@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const GHL_BASE = "https://services.leadconnectorhq.com";
+const GHL_VERSION = "2021-07-28";
+
+// MSI campaign tags — applied to every opt-in
+const MSI_TAGS = ["MSI", "msi-make-com", "msi-subscribed"];
+
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
@@ -13,78 +19,81 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
     }
 
-    const AC_API_URL = process.env.AC_API_URL;
-    const AC_API_KEY = process.env.AC_API_KEY;
-    const AC_LIST_ID = process.env.AC_LIST_ID;
+    const GHL_API_TOKEN = process.env.GHL_API_TOKEN;
+    const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID;
+    // Optional: workflow ID to add contact to automatically
+    const GHL_WORKFLOW_ID = process.env.GHL_WORKFLOW_ID;
 
-    // If AC credentials aren't set, return success for dev/preview testing
-    if (!AC_API_URL || !AC_API_KEY || !AC_LIST_ID) {
-      console.warn("ActiveCampaign credentials not configured — skipping AC integration");
+    // If GHL credentials aren't set, return success for dev/preview
+    if (!GHL_API_TOKEN || !GHL_LOCATION_ID) {
+      console.warn("GHL credentials not configured — skipping GHL integration");
       return NextResponse.json({ ok: true });
     }
 
-    // Create or update contact in ActiveCampaign
-    const contactRes = await fetch(`${AC_API_URL}/api/3/contacts`, {
+    const headers = {
+      Authorization: `Bearer ${GHL_API_TOKEN}`,
+      Version: GHL_VERSION,
+      "Content-Type": "application/json",
+    };
+
+    // 1. Create or update contact in GHL
+    let contactId: string | null = null;
+
+    const createRes = await fetch(`${GHL_BASE}/contacts/`, {
       method: "POST",
-      headers: {
-        "Api-Token": AC_API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
-        contact: {
-          email,
-          fieldValues: [
-            { field: "1", value: "make-com-2026-03" }, // source tag — field ID TBD
-          ],
-        },
+        locationId: GHL_LOCATION_ID,
+        email,
+        tags: MSI_TAGS,
+        source: "MSI Landing Page",
       }),
     });
 
-    let contactId: string | null = null;
+    if (createRes.ok) {
+      const createData = await createRes.json();
+      contactId = createData?.contact?.id ?? null;
+    } else if (createRes.status === 422 || createRes.status === 400) {
+      // Contact likely already exists — look them up
+      const lookupRes = await fetch(
+        `${GHL_BASE}/contacts/?locationId=${GHL_LOCATION_ID}&email=${encodeURIComponent(email)}`,
+        { headers }
+      );
+      if (lookupRes.ok) {
+        const lookupData = await lookupRes.json();
+        contactId = lookupData?.contacts?.[0]?.id ?? null;
 
-    if (contactRes.status === 422) {
-      // Contact exists — fetch their ID
-      const dupeData = await contactRes.json();
-      contactId = dupeData?.errors?.[0]?.meta?.duplicateFields?.[0]?.id ?? null;
-      if (!contactId) {
-        // Fallback: search for existing contact
-        const searchRes = await fetch(
-          `${AC_API_URL}/api/3/contacts?email=${encodeURIComponent(email)}`,
-          { headers: { "Api-Token": AC_API_KEY } }
-        );
-        const searchData = await searchRes.json();
-        contactId = searchData?.contacts?.[0]?.id ?? null;
+        // Apply tags to existing contact
+        if (contactId) {
+          await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ tags: MSI_TAGS }),
+          });
+        }
       }
-    } else if (contactRes.ok) {
-      const contactData = await contactRes.json();
-      contactId = contactData?.contact?.id ?? null;
     } else {
-      console.error("AC contact creation failed:", await contactRes.text());
-      // Don't block the user — log and continue
+      console.error("GHL contact creation failed:", createRes.status, await createRes.text());
     }
 
-    // Subscribe to list
-    if (contactId && AC_LIST_ID) {
-      await fetch(`${AC_API_URL}/api/3/contactLists`, {
-        method: "POST",
-        headers: {
-          "Api-Token": AC_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contactList: {
-            list: AC_LIST_ID,
-            contact: contactId,
-            status: 1, // 1 = subscribed
-          },
-        }),
-      });
+    // 2. Add to workflow if workflow ID is configured
+    if (contactId && GHL_WORKFLOW_ID) {
+      const workflowRes = await fetch(
+        `${GHL_BASE}/contacts/${contactId}/workflow/${GHL_WORKFLOW_ID}`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ eventStartTime: new Date().toISOString() }),
+        }
+      );
+      if (!workflowRes.ok) {
+        console.error("GHL workflow add failed:", workflowRes.status, await workflowRes.text());
+      }
     }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Subscribe error:", err);
-    // Don't expose internal errors — return generic success to avoid leaking system info
     return NextResponse.json({ ok: true });
   }
 }

@@ -152,7 +152,7 @@ export default function Home() {
         </div>
 
         {/* FTC Disclosure — tightened gap */}
-        <p className="text-xs text-neutral-600 leading-relaxed mb-8">
+        <p className="text-xs text-neutral-600 leading-relaxed mb-5">
           I personally use and recommend Make.com for my own automation stack. This site contains affiliate links — if you sign up for Make.com through my link, I may earn a commission at no additional cost to you. The PDF is free either way.
         </p>
 
